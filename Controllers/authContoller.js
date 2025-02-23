@@ -6,6 +6,7 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const user = new User({ name, email, password });
+    console.log(user);
     await user.save();
     const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
       expiresIn: "1h",
