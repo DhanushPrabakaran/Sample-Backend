@@ -4,7 +4,6 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const simpleGit = require("simple-git");
-// const TestHistory = require("../Models/Testhistory");
 
 router.post("/scan", async (req, res) => {
   const { url, user } = req.body;
