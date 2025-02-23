@@ -1,43 +1,59 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authMiddleware = require('../Middlewares/authMiddleware');
-const TestHistory = require('../Models/testhistory');
-const { exec } = require('child_process');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const path = require("path");
+const fs = require("fs");
+const { Worker } = require("worker_threads");
+const simpleGit = require("simple-git");
+const TestHistory = require("../Models/TestHistory");
 
-router.post('/scan', authMiddleware, async (req, res) => {
-    const { website } = req.body;
-    if (!website) return res.status(400).json({ message: "Website URL required" });
+router.post("/scan", async (req, res) => {
+  const { url, userId } = req.body;
+  if (!url || !userId)
+    return res.status(400).json({ error: "URL and userId are required" });
 
-    try {
-        // Crawling website
-        const response = await axios.get(website);
-        const $ = cheerio.load(response.data);
-        let techStack = [];
+  const worker = new Worker(path.join(__dirname, "workers", "scanWorker.js"), {
+    workerData: { url, userId },
+  });
 
-        $('script').each((i, script) => {
-            if (script.attribs.src) techStack.push(script.attribs.src);
-        });
+  worker.on("message", async (result) => {
+    console.log("Scan Completed:", result);
+  });
+  worker.on("error", (err) => console.error("Worker Error:", err));
+  worker.on("exit", (code) => console.log(`Worker exited with code ${code}`));
 
-        // Run vulnerability scan (example using a shell script)
-        exec(`nikto -h ${website}`, (error, stdout, stderr) => {
-            if (error) {
-                return res.status(500).json({ message: "Scanning Error", error });
-            }
+  res.json({ message: "Scan started in background", url });
+});
 
-            const vulnerabilities = stdout.split("\n").filter(line => line.includes("OSVDB"));
+router.post("/git-scan", async (req, res) => {
+  const { repoUrl, userId } = req.body;
+  if (!repoUrl || !userId)
+    return res
+      .status(400)
+      .json({ error: "Repository URL and userId are required" });
 
-            // Save scan result
-            const newScan = new TestHistory({ user: req.user.id, website, techStack, vulnerabilities });
-            newScan.save();
+  const repoPath = path.join(__dirname, "repos", path.basename(repoUrl));
+  if (fs.existsSync(repoPath))
+    await fs.promises.rm(repoPath, { recursive: true, force: true });
 
-            res.json({ website, techStack, vulnerabilities });
-        });
+  simpleGit().clone(repoUrl, repoPath, (err) => {
+    if (err)
+      return res.status(500).json({ error: "Failed to clone repository" });
 
-    } catch (err) {
-        res.status(500).json({ message: "Website Crawling Failed", error: err.message });
-    }
+    const worker = new Worker(
+      path.join(__dirname, "workers", "gitScanWorker.js"),
+      {
+        workerData: { repoPath, userId },
+      }
+    );
+
+    worker.on("message", async (result) => {
+      console.log("Git Scan Completed:", result);
+    });
+    worker.on("error", (err) => console.error("Worker Error:", err));
+    worker.on("exit", (code) => console.log(`Worker exited with code ${code}`));
+
+    res.json({ message: "Repository scan started in background", repoUrl });
+  });
 });
 
 module.exports = router;
