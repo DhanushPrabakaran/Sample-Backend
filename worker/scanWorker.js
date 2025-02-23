@@ -1,9 +1,9 @@
 const { parentPort, workerData } = require("worker_threads");
 const puppeteer = require("puppeteer");
 const { exec } = require("child_process");
-
-const TestHistory = require("../Models/TestHistory");
-
+const connectDB = require("../Config/db");
+const TestHistory = require("../Models/Testhistory");
+connectDB();
 async function scanWebsite(url) {
   try {
     const browser = await puppeteer.launch({ headless: true });
@@ -23,7 +23,7 @@ async function scanWebsite(url) {
         techStack,
         vulnerabilities,
       });
-
+      console.log(scanResult);
       await scanResult.save();
       parentPort.postMessage({ url, techStack, vulnerabilities });
     });
@@ -32,4 +32,11 @@ async function scanWebsite(url) {
   }
 }
 
+// const TestHistorySchema = new mongoose.Schema({
+//   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+//   website: { type: String, required: true },
+//   techStack: { type: Object },
+//   vulnerabilities: { type: Object },
+//   createdAt: { type: Date, default: Date.now },
+// });
 scanWebsite(workerData.url);

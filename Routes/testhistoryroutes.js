@@ -4,16 +4,19 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const simpleGit = require("simple-git");
-const TestHistory = require("../Models/TestHistory");
+// const TestHistory = require("../Models/Testhistory");
 
 router.post("/scan", async (req, res) => {
   const { url, user } = req.body;
   if (!url || !user)
     return res.status(400).json({ error: "URL and user are required" });
 
-  const worker = new Worker(path.join(__dirname, "workers", "scanWorker.js"), {
-    workerData: { url, user },
-  });
+  const worker = new Worker(
+    path.join(__dirname, "../worker", "scanWorker.js"),
+    {
+      workerData: { url, user },
+    }
+  );
 
   worker.on("message", async (result) => {
     console.log("Scan Completed:", result);
@@ -40,7 +43,7 @@ router.post("/git-scan", async (req, res) => {
       return res.status(500).json({ error: "Failed to clone repository" });
 
     const worker = new Worker(
-      path.join(__dirname, "workers", "gitScanWorker.js"),
+      path.join(__dirname, "../worker", "gitScanWorker.js"),
       {
         workerData: { repoPath, user },
       }

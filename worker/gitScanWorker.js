@@ -1,10 +1,10 @@
 const { parentPort, workerData } = require("worker_threads");
 const { exec } = require("child_process");
 const fs = require("fs");
-const TestHistory = require("../Models/TestHistory");
+const TestHistory = require("../Models/Testhistory");
 
 // Connect to MongoDB
-
+connectDB();
 async function scanRepository(repoPath) {
   try {
     if (!fs.existsSync(repoPath)) {
@@ -18,8 +18,8 @@ async function scanRepository(repoPath) {
       const scanResult = new TestHistory({
         user: workerData.user, // Pass user from main thread
         website: repoPath,
-        techStack: {}, // Not applicable here
-        vulnerabilities,
+        techStack: result.techStack || {},
+        vulnerabilities: result.vulnerabilities || {},
       });
 
       await scanResult.save();
