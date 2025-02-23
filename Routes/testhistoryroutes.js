@@ -7,12 +7,12 @@ const simpleGit = require("simple-git");
 const TestHistory = require("../Models/TestHistory");
 
 router.post("/scan", async (req, res) => {
-  const { url, userId } = req.body;
-  if (!url || !userId)
-    return res.status(400).json({ error: "URL and userId are required" });
+  const { url, user } = req.body;
+  if (!url || !user)
+    return res.status(400).json({ error: "URL and user are required" });
 
   const worker = new Worker(path.join(__dirname, "workers", "scanWorker.js"), {
-    workerData: { url, userId },
+    workerData: { url, user },
   });
 
   worker.on("message", async (result) => {
@@ -25,11 +25,11 @@ router.post("/scan", async (req, res) => {
 });
 
 router.post("/git-scan", async (req, res) => {
-  const { repoUrl, userId } = req.body;
-  if (!repoUrl || !userId)
+  const { repoUrl, user } = req.body;
+  if (!repoUrl || !user)
     return res
       .status(400)
-      .json({ error: "Repository URL and userId are required" });
+      .json({ error: "Repository URL and user are required" });
 
   const repoPath = path.join(__dirname, "repos", path.basename(repoUrl));
   if (fs.existsSync(repoPath))
@@ -42,7 +42,7 @@ router.post("/git-scan", async (req, res) => {
     const worker = new Worker(
       path.join(__dirname, "workers", "gitScanWorker.js"),
       {
-        workerData: { repoPath, userId },
+        workerData: { repoPath, user },
       }
     );
 

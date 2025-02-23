@@ -16,7 +16,7 @@ async function scanRepository(repoPath) {
 
       // Save to MongoDB
       const scanResult = new TestHistory({
-        user: workerData.userId, // Pass userId from main thread
+        user: workerData.user, // Pass user from main thread
         website: repoPath,
         techStack: {}, // Not applicable here
         vulnerabilities,

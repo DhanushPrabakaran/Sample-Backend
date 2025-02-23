@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./Config/db");
-
+const authMiddleware = require("./Middlewares/authmiddleware");
 const authRoutes = require("./Routes/authroutes");
 const scanRoutes = require("./Routes/testhistoryroutes");
 
@@ -18,7 +18,7 @@ connectDB();
 
 // ✅ Define Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/scan", scanRoutes);
+app.use("/api/scan", authMiddleware, scanRoutes);
 
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;

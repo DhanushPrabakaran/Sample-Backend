@@ -18,7 +18,7 @@ async function scanWebsite(url) {
 
       // Save to MongoDB
       const scanResult = new TestHistory({
-        user: workerData.userId, // Pass userId from the main thread
+        user: workerData.user, // Pass user from the main thread
         website: url,
         techStack,
         vulnerabilities,
